@@ -237,37 +237,47 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     }
     
 	
-		func cropVideo(outputFileURL:NSURL, fromLibrary:Bool){
+    func cropVideo(outputFileURL:NSURL, fromLibrary:Bool) {
 		
         let videoAsset: AVAsset = AVAsset(URL: outputFileURL) as AVAsset
-        
         let clipVideoTrack = videoAsset.tracksWithMediaType(AVMediaTypeVideo).first! as AVAssetTrack
-        
         let composition = AVMutableComposition()
         composition.addMutableTrackWithMediaType(AVMediaTypeVideo, preferredTrackID: CMPersistentTrackID())
-        
         let videoComposition = AVMutableVideoComposition()
-        
-        videoComposition.renderSize = CGSizeMake(720, 720)
-        videoComposition.frameDuration = CMTimeMake(1, 30)
-        
         let instruction = AVMutableVideoCompositionInstruction()
+        // rotate to portrait
+        let transformer:AVMutableVideoCompositionLayerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: clipVideoTrack)
+        var t1:CGAffineTransform
+        var t2:CGAffineTransform
         
         instruction.timeRange = CMTimeRangeMake(kCMTimeZero, CMTimeMakeWithSeconds(180, 30))
         
-        // rotate to portrait
-        let transformer:AVMutableVideoCompositionLayerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: clipVideoTrack)
-				var t1:CGAffineTransform
-				var t2:CGAffineTransform
-			
-				if fromLibrary {
-					t1 = CGAffineTransformMakeTranslation(0, 0);
-					t2 = CGAffineTransformRotate(t1, 0);
-				} else {
-					t1 = CGAffineTransformMakeTranslation(720, 0);
-					t2 = CGAffineTransformRotate(t1, CGFloat(M_PI_2));
-				}
+        if fromLibrary {
+            
+            
+            //cropping based on orientation of video clip
+            if clipVideoTrack.naturalSize.height > clipVideoTrack.naturalSize.width {
+                //portrait videos
+                videoComposition.renderSize = CGSizeMake(clipVideoTrack.naturalSize.width, clipVideoTrack.naturalSize.width)
+                t1 = CGAffineTransformMakeTranslation(0, -(clipVideoTrack.naturalSize.height/4));
+            } else {
+                //landscape videos
+                videoComposition.renderSize = CGSizeMake(clipVideoTrack.naturalSize.height, clipVideoTrack.naturalSize.height)
+                t1 = CGAffineTransformMakeTranslation(-(clipVideoTrack.naturalSize.width/4), 0);
+            }
+            
+            t2 = CGAffineTransformRotate(t1, 0);
+            
+        } else {
+            //recorded straight from the camera - default settings
+            videoComposition.renderSize = CGSizeMake(720, 720)
+            t1 = CGAffineTransformMakeTranslation(720, 0);
+            t2 = CGAffineTransformRotate(t1, CGFloat(M_PI_2));
 
+        }
+        
+        videoComposition.frameDuration = CMTimeMake(1, 30)
+        
         transformer.setTransform(t2, atTime: kCMTimeZero)
         instruction.layerInstructions = [transformer]
         videoComposition.instructions = [instruction]
@@ -617,18 +627,25 @@ extension AwesomeVideoViewController: UIImagePickerControllerDelegate {
 		
 		if mediaType == kUTTypeMovie {
 			let avAsset = AVAsset(URL:info[UIImagePickerControllerMediaURL] as! NSURL)
-			let message = "Video loaded from library"
+			var messageTitle = ""
+            var message = ""
 			var videoPath:NSURL
+			var videoDuration:Float64
 			
 			videoPath = avAsset.valueForKey("URL") as! NSURL
-			//videoDuration = avAsset.duration
-			//print(videoDuration)
-			
-			self.cropVideo(videoPath, fromLibrary: true)
-			
-			let alert = UIAlertController(title: "Asset Loaded", message: message, preferredStyle: .Alert)
-			alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel, handler: nil))
-			presentViewController(alert, animated: true, completion: nil)
+			//check for video length
+			videoDuration = CMTimeGetSeconds(avAsset.duration)
+            if videoDuration < 60 {
+                self.cropVideo(videoPath, fromLibrary: true)
+                messageTitle = "Asset Loaded"
+                message = "Video loaded from library"
+            } else {
+                messageTitle = "Video Too Long"
+                message = "Video must be under 60 seconds"
+            }
+            let alert = UIAlertController(title: messageTitle, message: message, preferredStyle: .Alert)
+            alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel, handler: nil))
+            presentViewController(alert, animated: true, completion: nil)
 		}
 	}
 }
