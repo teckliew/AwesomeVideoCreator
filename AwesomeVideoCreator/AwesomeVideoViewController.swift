@@ -45,7 +45,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     var videoThumbnail:[Thumbnail] = [Thumbnail]()
     var animating:Bool = false
     var time:Int = 0
-		var loadedLibraryAsset = false
+    var loadedLibraryAsset = false
     
     var timer:NSTimer?
     
@@ -502,12 +502,12 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         
         let audioTrack = composition.addMutableTrackWithMediaType(AVMediaTypeAudio, preferredTrackID: kCMPersistentTrackID_Invalid)
         
-        var time:Double = 0.0
+        var mergeTime:Double = 0.000
         for video in self.videoClips {
             let asset = AVAsset(URL: video)
             let videoAssetTrack = asset.tracksWithMediaType(AVMediaTypeVideo)[0] 
             let audioAssetTrack = asset.tracksWithMediaType(AVMediaTypeAudio)[0]
-            let atTime = CMTime(seconds: time, preferredTimescale:1)
+            let atTime = CMTime(seconds: mergeTime, preferredTimescale:600)
             do{
                 try videoTrack.insertTimeRange(CMTimeRangeMake(kCMTimeZero, asset.duration) , ofTrack: videoAssetTrack, atTime: atTime)
                 
@@ -516,7 +516,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
             }catch{
                 print("something bad happend I don't want to talk about it")
             }
-            time +=  asset.duration.seconds
+            mergeTime +=  asset.duration.seconds
             
         }
         
