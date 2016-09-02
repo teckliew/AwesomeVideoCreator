@@ -104,7 +104,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         
         output = AVCaptureMovieFileOutput()
         
-        let longPressGesture = UILongPressGestureRecognizer(target: self, action: "handleLongGesture:")
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(AwesomeVideoViewController.handleLongGesture(_:)))
         longPressGesture.minimumPressDuration = 0.1
         clipsCollectionView.addGestureRecognizer(longPressGesture)
         
@@ -142,11 +142,11 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     @IBAction func swapCamera(){
         
         
-        for var i = 0; i <  captureSession!.inputs.count; i++ {
+        for var i in 0..<captureSession!.inputs.count {
             
             let input = captureSession!.inputs[i] as! AVCaptureDeviceInput
             let device = input.device as AVCaptureDevice
-            
+					
             if device.hasMediaType(AVMediaTypeVideo){
                 captureSession?.removeInput(input)
             }
@@ -154,7 +154,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
             
         }
         
-        if frontCamera{
+        if frontCamera {
             try! captureSession?.addInput(AVCaptureDeviceInput(device: backCameraVideoCapture!))
         }else{
             try! captureSession?.addInput(AVCaptureDeviceInput(device: frontCameraVideoCapture!))
@@ -166,35 +166,31 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     }
     
     @IBAction func toggleFlashlight(){
-        
-        for var i = 0; i <  captureSession!.inputs.count; i++ {
-            
-            let input = captureSession!.inputs[i] as! AVCaptureDeviceInput
-            let device = input.device as AVCaptureDevice
-            
-            if device.hasMediaType(AVMediaTypeVideo){
-               
-                try! device.lockForConfiguration()
-                if device.hasTorch && !device.torchActive {
-                    
-                    device.torchMode = AVCaptureTorchMode.On
-                    
-                }else{
-                    device.torchMode = AVCaptureTorchMode.Off
-                }
-                
-                device.unlockForConfiguration()
-                
-            }
-            
-            
-        }
-
+			if !frontCamera {
+				let device = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
+				if (device.hasTorch) {
+					do {
+						try device.lockForConfiguration()
+						if (device.torchMode == AVCaptureTorchMode.On) {
+							device.torchMode = AVCaptureTorchMode.Off
+						} else {
+							do {
+								try device.setTorchModeOnWithLevel(1.0)
+							} catch {
+								print(error)
+							}
+						}
+						device.unlockForConfiguration()
+					} catch {
+						print(error)
+					}
+				}
+			}
     }
-    
-    
+	
+	
     @IBAction func recordVideo(){
-        
+			
         if recordingInProgress {
             self.stopTimer()
             output.stopRecording()
@@ -221,7 +217,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     @IBAction func doneBtnClicked(){
         self.mergeVideoClips()
     }
-    
+	
     // MARK: AVCaptureFileOutputRecordingDelegate methods
     func captureOutput(captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAtURL outputFileURL: NSURL!, fromConnections connections: [AnyObject]!, error: NSError!) {
         
@@ -374,7 +370,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         
         
         let playerItem = AVPlayerItem(URL: url)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("itemDidFinsihPlaying:"), name:AVPlayerItemDidPlayToEndTimeNotification, object: playerItem)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(AwesomeVideoViewController.itemDidFinishPlaying(_:)), name:AVPlayerItemDidPlayToEndTimeNotification, object: playerItem)
         videoPlayerView.hidden = false
         videoPlayer = AVPlayerViewController() //
         videoPlayer?.delegate = self
@@ -388,12 +384,14 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     }
     
     
-    func itemDidFinsihPlaying(notification:NSNotification){
+    func itemDidFinishPlaying(notification:NSNotification){
         print("finished")
         self.selectedPlayingVideo += 1
         if selectedPlayingVideo < self.videoClips.count {
             self.addVideoPlayer(self.videoClips[self.selectedPlayingVideo])
-        }
+				} else {
+					videoPlayerView.hidden = true
+			}
     }
     
     
@@ -450,7 +448,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     
     func startTimer(){
         if timer == nil {
-         timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector:"addTime", userInfo: nil, repeats: true)
+         timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector:#selector(AwesomeVideoViewController.addTime), userInfo: nil, repeats: true)
         }
     }
     
@@ -460,7 +458,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
             timer = nil
         }
     }
-    
+	
     func addTime(){
         self.time += 1
         self.updateTimeLabel()
