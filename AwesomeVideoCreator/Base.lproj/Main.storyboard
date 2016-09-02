@@ -135,6 +135,13 @@
                                     <action selector="recordVideo" destination="BYZ-38-t0r" eventType="touchUpInside" id="uT8-Ca-W1e"/>
                                 </connections>
                             </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="O4p-Ki-CRn">
+                                <rect key="frame" x="387" y="846" width="58" height="30"/>
+                                <state key="normal" title="Add Clip"/>
+                                <connections>
+                                    <action selector="addClip:" destination="BYZ-38-t0r" eventType="touchUpInside" id="tGf-1V-8UZ"/>
+                                </connections>
+                            </button>
                             <collectionView multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="d2F-vP-MIA">
                                 <rect key="frame" x="0.0" y="653" width="600" height="168"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" minimumLineSpacing="10" minimumInteritemSpacing="10" id="eyI-Ou-GQI">
@@ -189,8 +196,10 @@
                             <constraint firstItem="GeC-pQ-IgP" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="topMargin" constant="7" id="PAt-Da-Vrv"/>
                             <constraint firstAttribute="trailingMargin" secondItem="d2F-vP-MIA" secondAttribute="trailing" constant="-20" id="Q44-CO-p7M"/>
                             <constraint firstAttribute="trailingMargin" secondItem="fuS-F7-SXO" secondAttribute="trailing" constant="-20" id="Uco-N5-8Q1"/>
+                            <constraint firstItem="O4p-Ki-CRn" firstAttribute="leading" secondItem="fuS-F7-SXO" secondAttribute="trailing" constant="53" id="WlN-jn-Ntg"/>
                             <constraint firstItem="RLI-32-TRs" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="topMargin" constant="7" id="XYG-6S-8VE"/>
                             <constraint firstItem="1cZ-Hd-uLm" firstAttribute="top" secondItem="RLI-32-TRs" secondAttribute="bottom" constant="8" id="YGD-Fq-UTo"/>
+                            <constraint firstItem="O4p-Ki-CRn" firstAttribute="top" secondItem="d2F-vP-MIA" secondAttribute="bottom" constant="25" id="b08-t4-Xm9"/>
                             <constraint firstItem="fuS-F7-SXO" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="bhi-DA-fZZ"/>
                             <constraint firstItem="03a-Lq-d4J" firstAttribute="top" secondItem="RLI-32-TRs" secondAttribute="bottom" constant="8" id="cQV-Jr-DbM"/>
                             <constraint firstItem="RLI-32-TRs" firstAttribute="leading" secondItem="g6R-6H-DQt" secondAttribute="trailing" constant="15" id="cmI-pp-rWo"/>

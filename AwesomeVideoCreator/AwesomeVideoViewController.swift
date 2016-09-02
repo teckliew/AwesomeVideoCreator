@@ -10,6 +10,7 @@ import UIKit
 import AVKit
 import AVFoundation
 import AssetsLibrary
+import MobileCoreServices
 
 class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, UICollectionViewDelegate, UICollectionViewDataSource, AVPlayerViewControllerDelegate {
 
@@ -44,6 +45,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     var videoThumbnail:[Thumbnail] = [Thumbnail]()
     var animating:Bool = false
     var time:Int = 0
+		var loadedLibraryAsset = false
     
     var timer:NSTimer?
     
@@ -101,15 +103,15 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
             print(error)
             return
         }
-        
-        output = AVCaptureMovieFileOutput()
-        
+			
+				//long press for thumbnails
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(AwesomeVideoViewController.handleLongGesture(_:)))
         longPressGesture.minimumPressDuration = 0.1
         clipsCollectionView.addGestureRecognizer(longPressGesture)
         
-        
-        let maxDuration = CMTimeMakeWithSeconds(180, 30)
+        //video output for recording
+				output = AVCaptureMovieFileOutput()
+        let maxDuration = CMTimeMakeWithSeconds(60, 30)
         output.maxRecordedDuration = maxDuration
         captureSession?.addOutput(output)
         let connection = output.connectionWithMediaType(AVMediaTypeVideo)
@@ -156,8 +158,10 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         
         if frontCamera {
             try! captureSession?.addInput(AVCaptureDeviceInput(device: backCameraVideoCapture!))
+						flashLightBtn?.hidden = false
         }else{
             try! captureSession?.addInput(AVCaptureDeviceInput(device: frontCameraVideoCapture!))
+						flashLightBtn?.hidden = true
         }
         
         frontCamera = !frontCamera
@@ -217,6 +221,10 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     @IBAction func doneBtnClicked(){
         self.mergeVideoClips()
     }
+    
+		@IBAction func addClip(sender: AnyObject) {
+				self.addClipFromLibrary()
+		}
 	
     // MARK: AVCaptureFileOutputRecordingDelegate methods
     func captureOutput(captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAtURL outputFileURL: NSURL!, fromConnections connections: [AnyObject]!, error: NSError!) {
@@ -319,7 +327,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         let clip = AVURLAsset(URL: outputFileURL)
         let imgGenerator = AVAssetImageGenerator(asset: clip)
         let cgImage = try! imgGenerator.copyCGImageAtTime(
-            CMTimeMake(0, 1), actualTime: nil)
+            CMTimeMake(1, 1), actualTime: nil)
         let uiImage = UIImage(CGImage: cgImage)
         return uiImage
         
@@ -548,12 +556,69 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         
         
     }
+	
+	func addClipFromLibrary() {
+		print("addClip")
+		if savedPhotosAvailable() {
+			startMediaBrowserFromViewController(self, usingDelegate: self)
+			loadedLibraryAsset = true
+		}
+	}
+	
+	func savedPhotosAvailable() -> Bool {
+		if UIImagePickerController.isSourceTypeAvailable(.SavedPhotosAlbum) == false {
+			let alert = UIAlertController(title: "Not Available", message: "No Saved Album found", preferredStyle: .Alert)
+			alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel, handler: nil))
+			presentViewController(alert, animated: true, completion: nil)
+			return false
+		}
+		return true
+	}
+	
+	func startMediaBrowserFromViewController(viewController: UIViewController!, usingDelegate delegate : protocol<UINavigationControllerDelegate, UIImagePickerControllerDelegate>!) -> Bool {
+		
+		if UIImagePickerController.isSourceTypeAvailable(.SavedPhotosAlbum) == false {
+			return false
+		}
+		
+		let mediaUI = UIImagePickerController()
+		mediaUI.sourceType = .SavedPhotosAlbum
+		mediaUI.mediaTypes = [kUTTypeMovie as NSString as String]
+		mediaUI.allowsEditing = true
+		mediaUI.delegate = delegate
+		presentViewController(mediaUI, animated: true, completion: nil)
+		return true
+	}
 
-    
+	
 }
 
 extension Int {
     var degreesToRadians : CGFloat {
         return CGFloat(self) * CGFloat(M_PI) / 180.0
     }
+}
+
+extension AwesomeVideoViewController: UINavigationControllerDelegate {
+	
+}
+
+extension AwesomeVideoViewController: UIImagePickerControllerDelegate {
+	func imagePickerController(picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : AnyObject]) {
+		let mediaType = info[UIImagePickerControllerMediaType] as! NSString
+		dismissViewControllerAnimated(true, completion: nil)
+		
+		if mediaType == kUTTypeMovie {
+			let avAsset = AVAsset(URL:info[UIImagePickerControllerMediaURL] as! NSURL)
+			let message = "Video loaded from library"
+			var videoPath:NSURL
+			
+			videoPath = avAsset.valueForKey("URL") as! NSURL
+			self.cropVideo(videoPath)
+			
+			let alert = UIAlertController(title: "Asset Loaded", message: message, preferredStyle: .Alert)
+			alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel, handler: nil))
+			presentViewController(alert, animated: true, completion: nil)
+		}
+	}
 }
