@@ -114,11 +114,10 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         let maxDuration = CMTimeMakeWithSeconds(60, 30)
         output.maxRecordedDuration = maxDuration
         captureSession?.addOutput(output)
-        let connection = output.connectionWithMediaType(AVMediaTypeVideo)
-        connection.videoOrientation = AVCaptureVideoOrientation.Portrait
-        captureSession?.sessionPreset = AVCaptureSessionPreset1280x720
-        captureSession?.commitConfiguration()
-        
+        //let connection = output.connectionWithMediaType(AVMediaTypeVideo)
+        //connection.videoOrientation = AVCaptureVideoOrientation.Portrait
+        //captureSession?.sessionPreset = AVCaptureSessionPreset1280x720
+        //captureSession?.commitConfiguration()
         
         videoPreviewView.bringSubviewToFront(self.trashButton)
         videoPreviewView.bringSubviewToFront(self.timeLabel)
@@ -229,7 +228,7 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     // MARK: AVCaptureFileOutputRecordingDelegate methods
     func captureOutput(captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAtURL outputFileURL: NSURL!, fromConnections connections: [AnyObject]!, error: NSError!) {
         
-        cropVideo(outputFileURL)
+        cropVideo(outputFileURL, fromLibrary: false)
         // getThumbnail(outputFileURL)
         
     }
@@ -237,9 +236,9 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
     func captureOutput(captureOutput: AVCaptureFileOutput!, didStartRecordingToOutputFileAtURL fileURL: NSURL!, fromConnections connections: [AnyObject]!) {
     }
     
-    
-    func cropVideo(outputFileURL:NSURL){
-        
+	
+		func cropVideo(outputFileURL:NSURL, fromLibrary:Bool){
+		
         let videoAsset: AVAsset = AVAsset(URL: outputFileURL) as AVAsset
         
         let clipVideoTrack = videoAsset.tracksWithMediaType(AVMediaTypeVideo).first! as AVAssetTrack
@@ -258,8 +257,16 @@ class AwesomeVideoViewController: UIViewController, AVCaptureFileOutputRecording
         
         // rotate to portrait
         let transformer:AVMutableVideoCompositionLayerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: clipVideoTrack)
-        let t1 = CGAffineTransformMakeTranslation(720, 0);
-        let t2 = CGAffineTransformRotate(t1, CGFloat(M_PI_2));
+				var t1:CGAffineTransform
+				var t2:CGAffineTransform
+			
+				if fromLibrary {
+					t1 = CGAffineTransformMakeTranslation(0, 0);
+					t2 = CGAffineTransformRotate(t1, 0);
+				} else {
+					t1 = CGAffineTransformMakeTranslation(720, 0);
+					t2 = CGAffineTransformRotate(t1, CGFloat(M_PI_2));
+				}
 
         transformer.setTransform(t2, atTime: kCMTimeZero)
         instruction.layerInstructions = [transformer]
@@ -614,7 +621,10 @@ extension AwesomeVideoViewController: UIImagePickerControllerDelegate {
 			var videoPath:NSURL
 			
 			videoPath = avAsset.valueForKey("URL") as! NSURL
-			self.cropVideo(videoPath)
+			//videoDuration = avAsset.duration
+			//print(videoDuration)
+			
+			self.cropVideo(videoPath, fromLibrary: true)
 			
 			let alert = UIAlertController(title: "Asset Loaded", message: message, preferredStyle: .Alert)
 			alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel, handler: nil))
